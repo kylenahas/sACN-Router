@@ -1,0 +1,26 @@
+<!DOCTYPE html> <html> <head> <title>WebSocket demo</title>
+<style>
+body {
+    background-color: #000000;
+    -webkit-transition: background-color 100ms linear;
+    -ms-transition: background-color 100ms linear;
+    transition: background-color 100ms linear;
+}
+</style>
+</head>
+  <body>
+  <script>
+     var ws = new WebSocket("ws://192.168.56.103:5678/"),
+     messages = document.createElement('ul');
+     ws.onmessage = function (event) {
+        document.body.style.backgroundColor = event.data;
+        var messages = document.getElementsByTagName('ul')[0],
+            message = document.createElement('li'), content = document.createTextNode(event.data);
+        message.appendChild(content); messages.appendChild(message);
+     };
+     document.body.appendChild(messages);
+  </script>
+  </body>
+</html>
+
+

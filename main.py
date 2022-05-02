@@ -23,26 +23,24 @@ import textwrap
 import sys
 from ola.ClientWrapper import ClientWrapper
 
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-import time
 
-__author__ = 'nomis52@gmail.com (Simon Newton)'
+import asyncio
+import datetime
+import random
+import websockets
+
+async def time(websocket, path):
+    while True:
+        # now = datetime.datetime.utcnow().isoformat() + 'Z'
+        # await websocket.send(now)
+        color = 'rgb(' + str(random.randint(0, 255)) + ', ' + str(random.randint(0, 255)) + ', '\
+                + str(random.randint(0, 255)) + ')'
+        await websocket.send(color)
+        await asyncio.sleep(random.random() * 3)
+
+start_server = websockets.serve(time, '192.168.56.103', 5678)
 
 
-hostName = "localhost"
-serverPort = 8080
-
-
-class MyServer(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        self.wfile.write(bytes("<html><head><title>https://pythonbasics.org</title></head>", "utf-8"))
-        self.wfile.write(bytes("<p>Request: %s</p>" % self.path, "utf-8"))
-        self.wfile.write(bytes("<body>", "utf-8"))
-        self.wfile.write(bytes("<p>This is an example web server.</p>", "utf-8"))
-        self.wfile.write(bytes("</body></html>", "utf-8"))
 
 
 def NewData(data):
@@ -61,9 +59,6 @@ def Usage():
 
 def main():
 
-  webServer = ThreadingHTTPServer((hostName, serverPort), MyServer)
-  print("Server started http://%s:%s" % (hostName, serverPort))
-
   try:
       opts, args = getopt.getopt(sys.argv[1:], "hu:", ["help", "universe="])
   except getopt.GetoptError as err:
@@ -81,19 +76,13 @@ def main():
 
   wrapper = ClientWrapper()
   client = wrapper.Client()
-  webServer.server_activate()
   client.RegisterUniverse(universe, client.REGISTER, NewData)
-  webServer.server_activate()
   wrapper.Run()
-
-  try:
-      webServer.serve_forever()
-  except KeyboardInterrupt:
-      pass
-
-  webServer.server_close()
-  print("Server stopped.")
 
 
 if __name__ == "__main__":
-  main()
+
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
+    main()
+
