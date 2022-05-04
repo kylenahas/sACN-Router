@@ -19,8 +19,12 @@
 """Receive DMX data."""
 
 import getopt
+import queue
 import textwrap
 import sys
+import threading
+from queue import Queue
+
 from ola.ClientWrapper import ClientWrapper
 
 
@@ -28,6 +32,8 @@ import asyncio
 import datetime
 import random
 import websockets
+
+dmx_frame_queue = Queue(maxsize=100)
 
 async def time(websocket, path):
     while True:
@@ -38,13 +44,23 @@ async def time(websocket, path):
         await websocket.send(color)
         await asyncio.sleep(random.random() * 3)
 
-start_server = websockets.serve(time, '192.168.56.103', 5678)
+
+async def serve_latest_color(websocket, path):
+    while True:
+        if not dmx_frame_queue.empty():
+            frame = dmx_frame_queue.get()
+            print("Data: " + str(frame[0:3]))
+            offset = 0
+            color = 'rgb(' + str(frame[0+offset]) + ', ' + str(frame[1+offset]) + ', ' + str(frame[2+offset]) + ')'
+            await websocket.send(color)
 
 
+start_server = websockets.serve(serve_latest_color, '192.168.56.103', 5678)
 
 
 def NewData(data):
-  print(data[0:3])
+    dmx_frame_queue.put(data)
+    # print(data[0:3])
 
 
 def Usage():
@@ -57,8 +73,14 @@ def Usage():
   -u, --universe <universe> Universe number."""))
 
 
-def main():
+def ws_main_loop():
+    # asyncio.get_event_loop().run_until_complete(start_server)
+    # asyncio.get_event_loop().run_forever()
+    asyncio.set_event_loop(start_server)
+    asyncio.get_event_loop().run_forever()
 
+
+def ola_main_loop():
   try:
       opts, args = getopt.getopt(sys.argv[1:], "hu:", ["help", "universe="])
   except getopt.GetoptError as err:
@@ -81,8 +103,15 @@ def main():
 
 
 if __name__ == "__main__":
+    # ws_thread = threading.Thread(target=ws_main_loop)
+    ola_thread = threading.Thread(target=ola_main_loop)
+
+    # ws_thread.start()
+    ola_thread.start()
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
-    main()
+
+
+
 
