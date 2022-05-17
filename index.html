@@ -10,22 +10,38 @@ body {
 </head>
   <body>
   <script>
-     var ws = new WebSocket("ws://" + window.location.hostname + ":5678/"),
-     messages = document.createElement('ul');
-     ws.onmessage = function (event) {
-        document.body.style.backgroundColor = event.data;
-        var messages = document.getElementsByTagName('ul')[0],
-            message = document.createElement('li'), content = document.createTextNode(event.data);
-        message.appendChild(content); messages.appendChild(message);
-     };
-     document.body.appendChild(messages);
+    function refresh() {
+      location.reload();
+    }
 
-     ws.onclose = function (event) {
-       document.body.style.backgroundColor = "#000000";
-     }
-     ws.onerror = function (event) {
-       document.body.style.backgroundColor = "#000000";
-     }
+    let refresh_deadman = setTimeout(refresh, 2000);
+    const params = new URLSearchParams(window.location.search);
+    let ws = new WebSocket("ws://" + window.location.hostname + ":5678/"),
+    messages = document.createElement('ul');
+    ws.addEventListener("open", () => {
+      if (params.has("a")) {
+       // alert(params.get("a"))
+       ws.send(params.get("a"));
+      }
+    });
+    ws.onmessage = function (event) {
+      document.body.style.backgroundColor = event.data;
+      if (params.has("debug")) {
+        let messages = document.getElementsByTagName('ul')[0],
+                  message = document.createElement('li'), content = document.createTextNode(event.data);
+        message.appendChild(content); messages.appendChild(message);
+      }
+      clearTimeout(refresh_deadman);
+      refresh_deadman = setTimeout(refresh, 500);
+    };
+    document.body.appendChild(messages);
+
+    ws.onclose = function (event) {
+      document.body.style.backgroundColor = "#000000";
+    }
+    ws.onerror = function (event) {
+      document.body.style.backgroundColor = "#000000";
+    }
   </script>
   </body>
 </html>
