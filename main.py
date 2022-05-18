@@ -119,7 +119,7 @@ def Usage():
 
 def ola_main_loop():
     print("OLA Server Started:")
-    universe = 2
+    universe = 3
     print(" -> Subscribed to universe: " + str(universe))
     # try:
     #     opts, args = getopt.getopt(sys.argv[1:], "hu:", ["help", "universe="])
